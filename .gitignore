@@ -1,0 +1,30 @@
+# 🔴 SECRETS (NEVER UPLOAD)
+.env
+.env.local
+*.pem
+*.key
+
+# 🟢 NODE / FRONTEND / MOBILE APPS
+node_modules/
+.expo/
+.next/
+out/
+build/
+dist/
+npm-debug.log*
+yarn-error.log*
+
+# 🔵 PYTHON / BACKEND
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+.pytest_cache/
+*.db
+*.sqlite3
+
+# ⚪ OS FILES
+.DS_Store
+Thumbs.db
