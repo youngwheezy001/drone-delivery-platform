@@ -24,7 +24,8 @@ class WebcamVideoStreamTrack(VideoStreamTrack):
 
 async def run_drone_camera():
     drone_id = "DRONE-001"
-    uri = f"ws://localhost:8000/api/v1/telemetry/webrtc/{drone_id}"
+    # 🛰️ MISSION CONTROL SYNC: Hub IP for signaling
+    uri = f"ws://192.168.137.1:8000/api/v1/telemetry/webrtc/{drone_id}"
 
     pc = RTCPeerConnection()
     webcam_track = WebcamVideoStreamTrack()

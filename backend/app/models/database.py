@@ -3,11 +3,10 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
 
-# 1. Load the secrets from the .env file
-load_dotenv() 
+from app.core.config import settings
 
-# 2. Fetch the Supabase URL (Falls back to local SQLite if you forget the .env)
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./drone_mission_control.db")
+# 2. Fetch the Database URL from the centralized settings
+DATABASE_URL = settings.DATABASE_URL
 
 # 3. SQLAlchemy Async Engine requires a specific 'postgresql+asyncpg' prefix
 if DATABASE_URL.startswith("postgres://") or DATABASE_URL.startswith("postgresql://"):

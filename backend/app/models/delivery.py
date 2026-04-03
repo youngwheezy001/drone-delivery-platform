@@ -21,5 +21,7 @@ class DeliveryRecord(Base):
     package_weight_kg = Column(Float, nullable=False)
     distance_km = Column(Float, nullable=False)
     route_json = Column(JSON, nullable=False) # Saves the array of waypoints
+    estimated_cost = Column(Float, default=0.0) # Network yield in KES
+    scheduled_at = Column(DateTime(timezone=True), nullable=True) # Future mission timing
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -5,7 +5,9 @@ from typing import Dict, List
 
 router = APIRouter()
 
-MOCK_ROUTE = [[-1.278, 36.773], [-1.280, 36.778], [-1.285, 36.780], [-1.288, 36.784]]
+from sqlalchemy import select
+from app.models.database import AsyncSessionLocal
+from app.models.delivery import DeliveryRecord
 
 def interpolate_points(p1, p2, steps=10):
     lat_step = (p2[0] - p1[0]) / steps
@@ -14,26 +16,48 @@ def interpolate_points(p1, p2, steps=10):
 
 @router.websocket("/stream/{delivery_id}")
 async def telemetry_stream(websocket: WebSocket, delivery_id: str):
-    """The existing flight simulator for the map."""
+    """
+    A synchronized flight simulator that drives the map markers 
+    on both the Customer App and the Mission Control Dashboard.
+    """
     await websocket.accept()
+    
+    # 1. Fetch the actual route from the Database
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(DeliveryRecord).where(DeliveryRecord.id == delivery_id))
+        delivery = result.scalars().first()
+        
+        if not delivery or not delivery.route_json:
+            await websocket.send_text(json.dumps({"error": "Route not found for this delivery ID"}))
+            await websocket.close()
+            return
+        
+        dynamic_route = delivery.route_json # This comes from the planning stage!
+
     try:
+        # 2. Start the simulation based on the REAL route
         smooth_path = []
-        for i in range(len(MOCK_ROUTE) - 1):
-            smooth_path.extend(interpolate_points(MOCK_ROUTE[i], MOCK_ROUTE[i+1], steps=15))
-        smooth_path.append(MOCK_ROUTE[-1])
+        for i in range(len(dynamic_route) - 1):
+            smooth_path.extend(interpolate_points(dynamic_route[i], dynamic_route[i+1], steps=15))
+        smooth_path.append(dynamic_route[-1])
 
         for coord in smooth_path:
             payload = {
                 "delivery_id": delivery_id,
                 "status": "IN_TRANSIT",
-                "telemetry": {"latitude": coord[0], "longitude": coord[1], "altitude_m": 45.0, "speed_ms": 12.5}
+                "telemetry": {
+                    "latitude": coord[0], 
+                    "longitude": coord[1], 
+                    "altitude_m": 45.0, 
+                    "speed_ms": 12.5
+                }
             }
             await websocket.send_text(json.dumps(payload))
             await asyncio.sleep(0.5) 
         
         await websocket.send_text(json.dumps({
             "delivery_id": delivery_id, "status": "ARRIVED",
-            "telemetry": {"latitude": MOCK_ROUTE[-1][0], "longitude": MOCK_ROUTE[-1][1], "altitude_m": 45.0}
+            "telemetry": {"latitude": dynamic_route[-1][0], "longitude": dynamic_route[-1][1], "altitude_m": 0.0}
         }))
         await websocket.close()
     except WebSocketDisconnect:
