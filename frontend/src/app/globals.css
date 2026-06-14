@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+:root {
+  --background: #000000;
+  --foreground: #ffffff;
+  --accent: #00ffcc;
+  --border: rgba(255, 255, 255, 0.1);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  overflow-x: hidden;
+}
+
+/* 🛰️ Industrial Glassmorphism */
+@layer components {
+  .glass {
+    @apply bg-black/40 backdrop-blur-xl border border-white/10;
+  }
+  .glass-dark {
+    @apply bg-gray-950/80 backdrop-blur-2xl border border-white/5;
+  }
+}
+
+/* 🛰️ Cyber-Industrial Grid Patterns */
+.bg-grid {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+}
+
+.scanline {
+  width: 100%;
+  height: 2px;
+  background: rgba(0, 255, 204, 0.1);
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  animation: scan 4s linear infinite;
+}
+
+@keyframes scan {
+  0% { top: 0%; }
+  100% { top: 100%; }
+}
+
+.glow-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.glow-shimmer::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(0, 255, 204, 0.05),
+    transparent
+  );
+  transform: rotate(45deg);
+  animation: shimmer 6s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%) rotate(45deg); }
+  100% { transform: translateX(100%) rotate(45deg); }
+}
+
+/* 🛰️ Industrial Analytics Charts */
+.bar-track {
+  @apply h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5;
+}
+.bar-fill {
+  @apply h-full rounded-full transition-all duration-1000 ease-out;
+}
+.heat-gradient {
+  background: linear-gradient(90deg, #00ffcc10 0%, #00ffcc40 100%);
+}

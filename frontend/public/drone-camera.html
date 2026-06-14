@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TUSTAR UAV Hardware Simulator | WebRTC Payload Payload</title>
+    <style>
+        body { margin: 0; padding: 20px; background: #0b1120; color: #00ffcc; font-family: monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        .glass { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(0, 255, 204, 0.2); padding: 30px; border-radius: 20px; box-shadow: 0 0 30px rgba(0,0,0,0.5); width: 100%; max-width: 600px; text-align: center; }
+        video { width: 100%; max-width: 400px; border-radius: 10px; border: 2px solid #00ffcc; margin: 20px 0; background: #000; transform: scaleX(-1); }
+        button { background: #00ffcc; color: #000; padding: 15px 30px; border: none; border-radius: 10px; font-weight: 900; letter-spacing: 2px; cursor: pointer; text-transform: uppercase; margin-top: 10px; transition: all 0.2s; }
+        button:hover { background: #00ccff; box-shadow: 0 0 15px rgba(0,255,204,0.5); }
+        button:disabled { background: #334155; color: #64748b; cursor: not-allowed; box-shadow: none; }
+        select { background: #1e293b; color: #00ffcc; border: 1px solid #00ffcc; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 16px; margin: 10px 0; width: 100%; }
+        .logs { margin-top: 20px; font-size: 10px; color: #f97316; height: 100px; overflow-y: auto; text-align: left; background: #000; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="glass">
+        <h2 style="margin: 0; letter-spacing: 4px;">UAV PAYLOAD SIMULATOR</h2>
+        <p style="color: #64748b; font-size: 12px;">Captures local webcam to simulate drone optical feed.</p>
+        
+        <select id="droneId">
+            <option value="UAV-ALPHA">Mock Link: UAV-ALPHA</option>
+            <option value="UAV-BRAVO">Mock Link: UAV-BRAVO</option>
+            <option value="UAV-CHARLIE">Mock Link: UAV-CHARLIE</option>
+            <option value="UAV-DELTA">Mock Link: UAV-DELTA</option>
+        </select>
+
+        <video id="localVideo" autoplay playsinline muted></video>
+
+        <div>
+            <button id="startBtn">INITIALIZE OPTICAL UPLINK</button>
+        </div>
+
+        <div class="logs" id="logBox"></div>
+    </div>
+
+    <script>
+        const ICE_SERVERS = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+        let localStream;
+        let pc;
+        let ws;
+        let telemetryInterval;
+
+        const startBtn = document.getElementById('startBtn');
+        const videoEl = document.getElementById('localVideo');
+        const logBox = document.getElementById('logBox');
+
+        function log(msg) {
+            logBox.innerHTML += `<div>> ${msg}</div>`;
+            logBox.scrollTop = logBox.scrollHeight;
+            console.log(msg);
+        }
+
+        startBtn.onclick = async () => {
+            const droneId = document.getElementById('droneId').value;
+            startBtn.disabled = true;
+            log(`Booting optical array for ${droneId}...`);
+
+            try {
+                // 1. Get Webcam
+                localStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
+                videoEl.srcObject = localStream;
+                log('Optical array captured natively.');
+
+                // 2. Connect Signaling Server
+                const wsUrl = `ws://localhost:8000/api/v1/telemetry/webrtc/${droneId}`;
+                ws = new WebSocket(wsUrl);
+
+                ws.onopen = async () => {
+                    log(`Signaling WebSocket connected to ${wsUrl}`);
+                    
+                    // 3. Create WebRTC Connection
+                    pc = new RTCPeerConnection(ICE_SERVERS);
+
+                    // Add Local Video Stream to WebRTC
+                    localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+                    // Note: useWebRTC in frontend expects DataChannel to be created by the Drone
+                    const dataChannel = pc.createDataChannel('tactical');
+                    log('Created tactical DataChannel.');
+
+                    // ICE Candidates
+                    pc.onicecandidate = e => {
+                        if (e.candidate) ws.send(JSON.stringify({ type: 'candidate', candidate: e.candidate }));
+                    };
+
+                    // Send Offer
+                    const offer = await pc.createOffer();
+                    await pc.setLocalDescription(offer);
+                    ws.send(JSON.stringify({ type: 'offer', offer: pc.localDescription }));
+                    log('Transmited standard WebRTC Offer.');
+
+                    // Start telemetry spam directly over websocket to move the HUD!
+                    startTelemetrySpam();
+                };
+
+                ws.onmessage = async (e) => {
+                    const data = JSON.parse(e.data);
+                    if (data.type === 'answer') {
+                        log('Received remote Answer from Mission Control.');
+                        await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+                    } else if (data.type === 'candidate') {
+                        log('Received remote ICE Candidate.');
+                        await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    }
+                };
+
+                ws.onerror = (e) => log('WebSocket Error!');
+                ws.onclose = () => { log('WebSocket Closed.'); clearInterval(telemetryInterval); startBtn.disabled = false; };
+
+            } catch (err) {
+                log('CRITICAL FAULT: ' + err.message);
+                startBtn.disabled = false;
+            }
+        };
+
+        function startTelemetrySpam() {
+            let t = 0;
+            telemetryInterval = setInterval(() => {
+                if (ws.readyState === WebSocket.OPEN) {
+                    t += 0.1;
+                    const pitch = Math.sin(t) * 15;
+                    const roll = Math.cos(t * 0.5) * 20;
+                    const vel = 65.0 + Math.sin(t * 0.2) * 10;
+                    const alt = 120.0 + Math.cos(t * 0.1) * 5;
+                    
+                    ws.send(JSON.stringify({
+                        type: 'telemetry',
+                        data: { alt, vel, gforce: 1.2, pitch, roll }
+                    }));
+                }
+            }, 100);
+        }
+    </script>
+</body>
+</html>
