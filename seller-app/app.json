@@ -20,7 +20,8 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+      },
+      "package": "com.youngwheezy001.tustarmerchanthub"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -28,19 +29,16 @@
     "plugins": [
       "expo-secure-store"
     ],
-    "updates": {
-      "url": "https://u.expo.dev/placeholder-project-id",
-      "enabled": true,
-      "checkAutomatically": "ON_LOAD",
-      "fallbackToCacheTimeout": 30000
-    },
     "runtimeVersion": {
       "policy": "appVersion"
     },
     "extra": {
       "eas": {
-        "projectId": "INSERT_YOUR_SELLER_APP_PROJECT_ID_FROM_EXPO_DASHBOARD"
+        "projectId": "faa31e3e-b7fb-48b4-922b-3cad4672570b"
       }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/faa31e3e-b7fb-48b4-922b-3cad4672570b"
     }
   }
 }

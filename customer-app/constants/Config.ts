@@ -4,8 +4,8 @@ const PHYSICAL_IP = "10.0.7.147";
 const EMULATOR_IP = "10.0.2.2";
 
 const IS_PROD = !__DEV__;
-const PROD_URL = "https://drone-delivery-platform.onrender.com";
-const PROD_WS = "wss://drone-delivery-platform.onrender.com";
+const PROD_URL = "https://drone-delivery-platform-1.onrender.com";
+const PROD_WS = "wss://drone-delivery-platform-1.onrender.com";
 
 const BACKEND_IP = (__DEV__ && Platform.OS === 'android') 
   ? EMULATOR_IP 

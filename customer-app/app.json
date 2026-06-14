@@ -19,7 +19,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.youngwheezy001.tustardelivery"
     },
     "web": {
       "output": "static",
@@ -45,19 +46,17 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
-    "updates": {
-      "url": "https://u.expo.dev/placeholder-project-id",
-      "enabled": true,
-      "checkAutomatically": "ON_LOAD",
-      "fallbackToCacheTimeout": 30000
-    },
     "runtimeVersion": {
       "policy": "appVersion"
     },
     "extra": {
+      "router": {},
       "eas": {
-        "projectId": "INSERT_YOUR_CUSTOMER_APP_PROJECT_ID_FROM_EXPO_DASHBOARD"
+        "projectId": "09163745-874d-49c5-82e8-944fd35f8c05"
       }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/09163745-874d-49c5-82e8-944fd35f8c05"
     }
   }
 }
