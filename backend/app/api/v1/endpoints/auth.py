@@ -13,6 +13,9 @@ from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, Token
 from app.api.deps import get_current_user
 
+class GoogleLoginRequest(BaseModel):
+    email: str
+
 router = APIRouter()
 
 @router.post("/login/access-token", response_model=Token)
@@ -42,6 +45,29 @@ async def login_access_token(
         )
     
     # 3. Issue a fresh JWT
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    return {
+        "access_token": security.create_access_token(
+            user.id, expires_delta=access_token_expires
+        ),
+        "token_type": "bearer",
+    }
+
+@router.post("/google-login", response_model=Token)
+async def google_login(
+    payload: GoogleLoginRequest,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
+    """Mock Google Login: checks if email exists, if yes issues token bypassing password"""
+    result = await db.execute(select(User).where(User.email == payload.email))
+    user = result.scalars().first()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Google account not registered. Please create a profile first."
+        )
+        
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return {
         "access_token": security.create_access_token(
