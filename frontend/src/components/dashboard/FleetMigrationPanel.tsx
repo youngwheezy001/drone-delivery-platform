@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
 import { Send, ArrowRightLeft, Shield, Zap, Info } from 'lucide-react';
 
-interface Hub {
-  id: string;
-  company_id: string;
-  region: string;
-}
+import { Hub } from '../../types';
 
 interface FleetMigrationPanelProps {
   hubs: Hub[];

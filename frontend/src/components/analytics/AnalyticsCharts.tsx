@@ -154,7 +154,7 @@ export const NetworkYieldDonut: React.FC<{ data: YieldData[] }> = ({ data }) => 
           </Pie>
           <Tooltip 
             contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid #333', borderRadius: '12px' }}
-            formatter={(value: number) => `KES ${value.toLocaleString()}`}
+            formatter={(value: any) => `KES ${value.toLocaleString()}`}
           />
           <Legend verticalAlign="bottom" align="center" iconType="diamond" wrapperStyle={{ fontSize: '10px' }} />
         </PieChart>

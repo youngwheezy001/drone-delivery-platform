@@ -5,7 +5,8 @@ export interface Drone {
   alt: string;
   speed: string;
   coords: [number, number];
-  status: 'IN_FLIGHT' | 'CHARGING' | 'READY';
+  status: 'IN_FLIGHT' | 'CHARGING' | 'READY' | 'IN_TRANSIT' | 'MAINTENANCE';
+  has_conflict?: boolean;
 }
 
 export interface DroneTelemetry {

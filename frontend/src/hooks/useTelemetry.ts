@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useMissionStore } from '../lib/store';
-import { MissionStatus, TelemetryPacket } from '../types';
+import { MissionStatus } from '../types';
 
 export const useTelemetry = (wsUrl: string, activeDeliveryId: string | null) => {
   const updateDroneTelemetry = useMissionStore((state) => state.updateDroneTelemetry);
@@ -19,7 +19,7 @@ export const useTelemetry = (wsUrl: string, activeDeliveryId: string | null) => 
 
     ws.current.onmessage = (e) => {
       try {
-        const data: TelemetryPacket = JSON.parse(e.data);
+        const data = JSON.parse(e.data);
         updateDroneTelemetry(data.delivery_id, data.telemetry);
       } catch (err) {
         console.error("Dashboard Telemetry Parse Error", err);

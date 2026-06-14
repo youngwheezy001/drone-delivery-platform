@@ -4,4 +4,5 @@ export interface Hub {
   full_name: string;
   latitude: number;
   longitude: number;
+  region?: string;
 }

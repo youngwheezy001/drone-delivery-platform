@@ -104,24 +104,24 @@ export const OperationalMap: React.FC<OperationalMapProps> = ({
     const features = activeOrders
       .filter(m => m.route_json && m.route_json.length > 0)
       .map(m => ({
-        type: 'Feature',
+        type: 'Feature' as const,
         properties: { id: m.id },
         geometry: {
-          type: 'LineString',
-          coordinates: m.route_json?.map(coord => [coord[1], coord[0]]) // GL uses [Lon, Lat]
+          type: 'LineString' as const,
+          coordinates: (m.route_json || []).map(coord => [coord[1], coord[0]]) // GL uses [Lon, Lat]
         }
       }));
 
-    return { type: 'FeatureCollection', features };
+    return { type: 'FeatureCollection' as const, features };
   }, [activeOrders]);
 
   // 🌩️ TACTICAL WEATHER: Procedural Radar Overlay
   const weatherData = useMemo(() => {
     const center = [hqLocation[1] + (weatherOffset * 0.1), hqLocation[0] + (weatherOffset * 0.05)];
     return {
-      type: 'Feature',
+      type: 'Feature' as const,
       geometry: {
-        type: 'Polygon',
+        type: 'Polygon' as const,
         coordinates: [[
           [center[0] - 0.04, center[1] - 0.04],
           [center[0] + 0.04, center[1] - 0.02],
@@ -129,7 +129,8 @@ export const OperationalMap: React.FC<OperationalMapProps> = ({
           [center[0] - 0.03, center[1] + 0.04],
           [center[0] - 0.04, center[1] - 0.04]
         ]]
-      }
+      },
+      properties: {}
     };
   }, [hqLocation, weatherOffset]);
 

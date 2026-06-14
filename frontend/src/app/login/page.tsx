@@ -36,7 +36,7 @@ export default function LoginPage() {
         // 🔐 SECURE TRANSITION: Move to MFA Stage
         setMfaStage(true);
         // Store token temporarily or pass it to MFA complete
-        window.__temp_token = data.access_token;
+        sessionStorage.setItem('__temp_token', data.access_token);
       } else {
         setError('UNAUTHORIZED: MISSION CONTROL CREDENTIALS REJECTED');
       }
@@ -50,7 +50,8 @@ export default function LoginPage() {
   const handleMfaComplete = () => {
     setIsScanning(true);
     setTimeout(() => {
-      setAccessToken(window.__temp_token);
+      const token = sessionStorage.getItem('__temp_token');
+      if (token) setAccessToken(token);
       router.push('/');
     }, 2000);
   };

@@ -1,4 +1,4 @@
-export type MissionStatus = 'PREPARING' | 'IN_TRANSIT' | 'ARRIVED' | 'DELIVERED' | 'SCHEDULED' | 'ROUTE_CALCULATED' | 'DISPATCHED';
+export type MissionStatus = 'PREPARING' | 'IN_TRANSIT' | 'ARRIVED' | 'DELIVERED' | 'SCHEDULED' | 'ROUTE_CALCULATED' | 'DISPATCHED' | 'PENDING';
 
 export interface DeliveryMission {
   id: string;
