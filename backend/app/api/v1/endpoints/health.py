@@ -1,27 +1,49 @@
-from fastapi import APIRouter
-from app.models.database import engine
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
+from app.models.database import get_db
+from app.services.weather import get_current_weather
+import time
 
 router = APIRouter()
 
-@router.get("/health")
-async def health_check():
+@router.get("/tactical")
+async def get_tactical_health(db: AsyncSession = Depends(get_db)):
     """
-    Standard Health Check endpoint for Docker orchestration.
-    Verifies that the API is online and the Database connection is alive.
+    MISSION CRITICAL: Tactical Health HUD 🛰️🏥
+    Verifies SQL connectivity, engine latency, and multi-tenant integrity.
     """
+    start_time = time.time()
+    
     try:
-        # Check database connection
-        async with engine.connect() as conn:
-            await conn.execute(text("SELECT 1"))
+        # 1. SQL Connectivity & Latency Check
+        await db.execute(text("SELECT 1"))
+        latency_ms = round((time.time() - start_time) * 1000, 2)
+        
+        # 2. Schema Readiness Audit (Check key tables)
+        tables_res = await db.execute(text("SELECT name FROM sqlite_master WHERE type='table'"))
+        table_names = [r[0] for r in tables_res.all()]
+        
+        required_tables = ["users", "deliveries", "products", "drones"]
+        missing_tables = [t for t in required_tables if t not in table_names]
         
         return {
-            "status": "healthy",
-            "database": "connected",
-            "api": "online"
+            "status": "OPERATIONAL" if not missing_tables else "DEGRADED",
+            "weather": get_current_weather(),
+            "telemetry": {
+                "db_latency_ms": latency_ms,
+                "connection": "STABLE",
+                "engine": "SQLALCHEMY_ASYNC",
+                "readiness_audit": "PASSED" if not missing_tables else f"MISSING_{'_'.join(missing_tables).upper()}"
+            },
+            "timestamp": time.time()
         }
     except Exception as e:
         return {
-            "status": "unhealthy",
-            "error": str(e)
+            "status": "CRITICAL_FAILURE",
+            "telemetry": {
+                "error": str(e),
+                "connection": "DROPPED"
+            },
+            "timestamp": time.time()
         }

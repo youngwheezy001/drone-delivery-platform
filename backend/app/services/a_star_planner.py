@@ -1,21 +1,22 @@
 import math
 import heapq
+import time
 from typing import List, Tuple, Dict, Optional
+from app.services.airspace_registry import airspace_registry
 
 class FlightPathPlanner:
     """
-    Advanced Autonomous Navigation System using the A* Algorithm.
-    Ensures drones can navigate AROUND exclusion zones (KCAA No-Fly Zones)
-    by searching for the shortest available path on a coordinate grid.
+    UAV NAV-COM OS v4.0: High-Precision Autonomous Navigation.
+    Uses A* with post-processing 'String Pulling' for smooth, efficient flight paths.
     """
     def __init__(self):
         self.earth_radius_km = 6371.0
-        self.grid_size = 40  # 🚀 ACCELERATION: Lower resolution for 4x faster planning
-        self.padding_km = 0.3
-        self.max_iterations = 1000 # 🚀 SAFETY: Tighter break for mobile UI responsiveness
+        self.grid_size = 120 # 🚀 PRECISION: 3x resolution for tight obstacle avoidance
+        self.padding_km = 0.25 # Safety buffer around geofences
+        self.max_iterations = 3000
 
     def haversine(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-        """Calculates literal distance between GPS coordinates (Heuristic & Cost)."""
+        """Standard distance formula for GPS coordinates."""
         lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
         dlat = lat2 - lat1
         dlon = lon2 - lon1
@@ -24,26 +25,60 @@ class FlightPathPlanner:
         return self.earth_radius_km * c
 
     def is_collision(self, point: Tuple[float, float], obstacles: List[Dict]) -> bool:
-        """Checks if a coordinate breaches a geofence radius + safety buffer."""
+        """Collision check using haversine circle-boundary logic."""
         for obs in obstacles:
-            # We add a safety buffer to the obstacle radius
             if self.haversine(point[0], point[1], obs['lat'], obs['lon']) < (obs['radius_km'] + self.padding_km):
                 return True
         return False
 
+    def check_line_of_sight(self, p1: Tuple[float, float], p2: Tuple[float, float], obstacles: List[Dict]) -> bool:
+        """
+        Mathematical LOS Check: Samples the line between two points to ensure no obstacle collisions.
+        Used for 'String Pulling' path smoothing.
+        """
+        samples = 15
+        for i in range(1, samples):
+            t = i / samples
+            lat = p1[0] + (p2[0] - p1[0]) * t
+            lon = p1[1] + (p2[1] - p1[1]) * t
+            if self.is_collision((lat, lon), obstacles):
+                return False
+        return True
+
+    def smooth_path(self, path: List[Tuple[float, float]], obstacles: List[Dict]) -> List[Tuple[float, float]]:
+        """
+        String Pulling: Reduces redundant waypoints by checking direct line-of-sight.
+        Converts 'stairs' into straight flight lines.
+        """
+        if len(path) < 3:
+            return path
+        
+        smoothed = [path[0]]
+        current_idx = 0
+        
+        while current_idx < len(path) - 1:
+            furthest_visible = current_idx + 1
+            # Look ahead as far as possible
+            for check_idx in range(len(path) - 1, current_idx + 1, -1):
+                if self.check_line_of_sight(path[current_idx], path[check_idx], obstacles):
+                    furthest_visible = check_idx
+                    break
+            
+            smoothed.append(path[furthest_visible])
+            current_idx = furthest_visible
+            
+        return smoothed
+
     async def calculate_optimal_path(
-        self, start: Tuple[float, float], goal: Tuple[float, float], obstacles: List[Dict]
+        self, start: Tuple[float, float], goal: Tuple[float, float], obstacles: List[Dict], start_time: float = None
     ) -> Optional[List[Tuple[float, float]]]:
-        """
-        Implementation of the A* algorithm over a dynamically generated GPS grid.
-        Returns a collision-free path or None if no route exists.
-        """
-        # 0. Pre-Flight Validation: Check if start/goal are in exclusion zones
+        """A* Implementation with Dynamic Swarm Avoidance (V3)."""
         if self.is_collision(start, obstacles) or self.is_collision(goal, obstacles):
-            print("🚨 [A* PLANNER] Start or Goal is inside an exclusion zone. Planning aborted.")
             return None
 
-        # 1. Define Bounding Box & Grid Resolution
+        st = start_time or time.time()
+
+        # 1. Define Search Space
         lats = [start[0], goal[0]] + [o['lat'] for o in obstacles]
         lons = [start[1], goal[1]] + [o['lon'] for o in obstacles]
         
@@ -53,61 +88,61 @@ class FlightPathPlanner:
         lat_step = (max_lat - min_lat) / self.grid_size
         lon_step = (max_lon - min_lon) / self.grid_size
 
-        def to_grid(lat, lon):
-            return (round((lat - min_lat) / lat_step), round((lon - min_lon) / lon_step))
-        
         def from_grid(r, c):
             return (min_lat + (r * lat_step), min_lon + (c * lon_step))
 
-        start_node = to_grid(*start)
-        goal_node = to_grid(*goal)
+        start_node = (int((start[0] - min_lat) / lat_step), int((start[1] - min_lon) / lon_step))
+        goal_node = (int((goal[0] - min_lat) / lat_step), int((goal[1] - min_lon) / lon_step))
 
-        # 2. A* Core Logic
+        # 2. A* Core
         open_list = []
         heapq.heappush(open_list, (0, start_node))
-        
         came_from = {}
         g_score = {start_node: 0}
-        f_score = {start_node: self.haversine(start[0], start[1], goal[0], goal[1])}
-
+        
         iterations = 0
         while open_list and iterations < self.max_iterations:
             iterations += 1
-            current_f, current = heapq.heappop(open_list)
+            _, current = heapq.heappop(open_list)
 
             if current == goal_node:
-                # 3. Reconstruction: Trace back from Goal to Start
-                path = []
-                while current in came_from:
-                    path.append(from_grid(*current))
-                    current = came_from[current]
-                path.append(start)
-                return [ (round(p[0], 5), round(p[1], 5)) for p in reversed(path) ]
+                # Reconstruction
+                full_path = []
+                temp = current
+                while temp in came_from:
+                    full_path.append(from_grid(*temp))
+                    temp = came_from[temp]
+                full_path.append(start)
+                
+                raw_path = [ (round(p[0], 6), round(p[1], 6)) for p in reversed(full_path) ]
+                return self.smooth_path(raw_path, obstacles)
 
             r, c = current
-            # 8-Directional Movement (Up, Down, Left, Right + Diagonals)
-            neighbors = [(r+1, c), (r-1, c), (r, c+1), (r, c-1), 
-                         (r+1, c+1), (r-1, c-1), (r+1, c-1), (r-1, c+1)]
+            # Estimate current time based on distance traveled (60km/h = 1km/min = 0.016km/sec)
+            estimated_time = st + (g_score[current] / 60.0) * 3600
+            
+            # 🚀 SWARM V3: Fetch dynamic airspace obstacles for this timestamp
+            dynamic_obs = airspace_registry.get_dynamic_obstacles(estimated_time)
+            all_obstacles = obstacles + dynamic_obs
 
-            for next_node in neighbors:
-                next_pos = from_grid(*next_node)
+            for dr, dc in [(1,0),(-1,0),(0,1),(0,-1),(1,1),(-1,-1),(1,-1),(-1,1)]:
+                neighbor = (r+dr, c+dc)
                 
-                # Boundary & Collision Check
-                if not (0 <= next_node[0] <= self.grid_size and 0 <= next_node[1] <= self.grid_size):
+                if not (0 <= neighbor[0] <= self.grid_size and 0 <= neighbor[1] <= self.grid_size):
                     continue
-                if self.is_collision(next_pos, obstacles):
+                
+                pos = from_grid(*neighbor)
+                if self.is_collision(pos, all_obstacles):
                     continue
 
-                # Calculate tentative score (Movement cost is the actual GPS distance)
-                move_cost = self.haversine(from_grid(*current)[0], from_grid(*current)[1], next_pos[0], next_pos[1])
-                tentative_g_score = g_score[current] + move_cost
+                cost = self.haversine(from_grid(*current)[0], from_grid(*current)[1], pos[0], pos[1])
+                tentative_g = g_score[current] + cost
 
-                if next_node not in g_score or tentative_g_score < g_score[next_node]:
-                    came_from[next_node] = current
-                    g_score[next_node] = tentative_g_score
-                    h_score = self.haversine(next_pos[0], next_pos[1], goal[0], goal[1])
-                    # 🚀 GREEDY OPTIMIZATION: 1.2x factor for faster search tree convergence
-                    f_score[next_node] = tentative_g_score + (1.2 * h_score)
-                    heapq.heappush(open_list, (f_score[next_node], next_node))
+                if neighbor not in g_score or tentative_g < g_score[neighbor]:
+                    came_from[neighbor] = current
+                    g_score[neighbor] = tentative_g
+                    h = self.haversine(pos[0], pos[1], goal[0], goal[1])
+                    f = tentative_g + (1.1 * h)
+                    heapq.heappush(open_list, (f, neighbor))
 
-        return None # No viable path found bypassing exclusion zones
+        return None

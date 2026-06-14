@@ -46,11 +46,44 @@ async def sync_database():
                 print("🏁 Database is already fully synchronized.")
             else:
                 print(f"✅ Successfully applied {patches} tactical patches.")
+
+            # 3. 🛰️ TACTICAL SEEDING: Provisioning Partner Hubs
+            print("Initiating Partner Seeding Sequence...")
+            from passlib.context import CryptContext
+            pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+            
+            partners = [
+                ("admin@tustar.io", "tustar123", "TUSTAR CENTRAL HUB", "TUSTAR_HQ", "SELLER"),
+                ("lewis@megascript.com", "megascript001", "MEGASCRIPT LOGISTICS", "MEGASCRIPT_HUB", "SELLER"),
+                ("global@cargo.net", "cargo777", "GLOBAL CARGO NODE", "GLOBAL_CARGO", "SELLER")
+            ]
+            
+            seeds = 0
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            for email, pin, name, cid, role in partners:
+                cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+                if not cursor.fetchone():
+                    user_id = f"user_{cid.lower()}"
+                    hashed_pw = pwd_context.hash(pin)
+                    cursor.execute(
+                        "INSERT INTO users (id, email, hashed_password, full_name, company_id, role, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)",
+                        (user_id, email, hashed_pw, name, cid, role)
+                    )
+                    print(f"🛰️ [SEED] Provisioned Hub: {name} ({email})")
+                    seeds += 1
+            
+            conn.commit()
+            conn.close()
+            if seeds > 0:
+                print(f"✅ Successfully seeded {seeds} partner profiles.")
+            else:
+                print("🏁 Partner ecosystem already provisioned.")
                 
         except Exception as e:
-            print(f"❌ Synchronization Error: {e}")
+            print(f"❌ Synchronization/Seeding Error: {e}")
     else:
-        print("⚠️  Target database 'sql_app.db' not found. Ensure you are in the /backend folder.")
+        print(f"⚠️  Target database '{db_path}' not found. Ensure you are in the /backend folder.")
 
 if __name__ == "__main__":
     asyncio.run(sync_database())

@@ -111,3 +111,25 @@ async def update_product(
     
     await db.commit()
     return product
+
+@router.get("/discovery")
+async def get_marketplace_discovery(db: AsyncSession = Depends(get_db)):
+    """Aggregate all active hubs and their product catalogs for the Customer App."""
+    # Fetch all sellers (hubs)
+    hRes = await db.execute(select(User).where(User.role == "SELLER"))
+    hubs = hRes.scalars().all()
+    
+    discovery_data = []
+    for hub in hubs:
+        pRes = await db.execute(select(Product).where(Product.seller_id == hub.id, Product.is_active == True))
+        products = pRes.scalars().all()
+        discovery_data.append({
+            "id": hub.id,
+            "name": hub.full_name,
+            "company_id": hub.company_id,
+            "region": hub.region,
+            "products": products
+        })
+        
+    return discovery_data
+

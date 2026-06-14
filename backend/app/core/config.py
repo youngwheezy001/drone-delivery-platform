@@ -10,7 +10,7 @@ class Settings:
     VERSION: str = "1.0.0"
 
     # --- DATABASE ---
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./drone_mission_control.db")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql+asyncpg://drone_admin:secure_uplink_key@postgres:5432/drone_mission_control")
 
     # --- MISSION CONTROL GPS ---
     # Defaulting to Nairobi HQ
@@ -18,10 +18,10 @@ class Settings:
     HQ_LON: float = float(os.getenv("HQ_LON", 36.7884))
 
     # --- SERVER SETTINGS ---
-    DEBUG: bool = os.getenv("DEBUG", "True") == "True"
+    DEBUG: bool = os.getenv("DEBUG", "False") == "True"
     HOST: str = os.getenv("HOST", "0.0.0.0")
     PORT: int = int(os.getenv("PORT", 8000))
-    RELOAD: bool = os.getenv("RELOAD", "True") == "True"
+    RELOAD: bool = os.getenv("RELOAD", "False") == "True"
 
     # --- SECURITY ---
     SECRET_KEY: str = os.getenv("SECRET_KEY", "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7")

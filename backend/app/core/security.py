@@ -5,7 +5,7 @@ from passlib.context import CryptContext
 from app.core.config import settings
 
 # 1. Setup Password Hashing Context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Checks if a raw password matches the hashed version."""

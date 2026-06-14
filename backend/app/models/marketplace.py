@@ -1,4 +1,5 @@
 from sqlalchemy import Column, String, Float, Boolean, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.models.database import Base
 import uuid
@@ -45,6 +46,9 @@ class Category(Base):
     icon = Column(String, default="grid-outline")
     color = Column(String, default="#ffffff")
 
+    # 🔗 RELATIONSHIPS
+    products = relationship("Product", back_populates="category")
+
 class Product(Base):
     """
     Mercantile Product Catalog.
@@ -66,4 +70,8 @@ class Product(Base):
     is_top_performer = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
     
+    # 🔗 RELATIONSHIPS
+    seller = relationship("User", back_populates="products")
+    category = relationship("Category", back_populates="products")
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())

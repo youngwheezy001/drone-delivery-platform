@@ -1,33 +1,53 @@
+import os
 import asyncio
 import json
-import cv2
 import websockets
+import cv2
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack
 from av import VideoFrame
 
 class WebcamVideoStreamTrack(VideoStreamTrack):
     def __init__(self):
         super().__init__()
-        self.cap = cv2.VideoCapture(0) # Grabs the default laptop camera
+        self.cap = cv2.VideoCapture(0)
 
     async def recv(self):
         pts, time_base = await self.next_timestamp()
-        ret, frame = self.cap.read()
         
+        ret, frame = self.cap.read()
         if not ret:
-            return None
-
-        video_frame = VideoFrame.from_ndarray(frame, format="bgr24")
+            # Fallback to black frame if camera is unavailable
+            import numpy as np
+            frame = np.zeros((480, 640, 3), dtype=np.uint8)
+            
+        # OpenCV uses BGR, WebRTC expects RGB
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        
+        video_frame = VideoFrame.from_ndarray(frame, format="rgb24")
         video_frame.pts = pts
         video_frame.time_base = time_base
+        
         return video_frame
 
 async def run_drone_camera():
     drone_id = "DRONE-001"
-    # 🛰️ MISSION CONTROL SYNC: Hub IP for signaling
-    uri = f"ws://192.168.137.1:8000/api/v1/telemetry/webrtc/{drone_id}"
+    
+    # 🛰️ MISSION CONTROL SYNC: Dynamic host discovery
+    SIGNALING_HOST = os.getenv("SIGNALING_HOST", "127.0.0.1")
+    uri = f"ws://{SIGNALING_HOST}:8000/api/v1/telemetry/webrtc/{drone_id}"
 
     pc = RTCPeerConnection()
+
+    # --- FLIGHT DYNAMICS ENGINE ---
+    # Simulated physics state
+    state = {
+        "alt": 45.0,
+        "vel": 12.5,
+        "gforce": 1.0,
+        "pitch": 0,
+        "roll": 0
+    }
+
     webcam_track = WebcamVideoStreamTrack()
     pc.addTrack(webcam_track)
 
@@ -40,18 +60,46 @@ async def run_drone_camera():
 
     @channel.on("message")
     def on_message(message):
-        # This acts as the physical flight controller
+        # 🧪 PHYSICS OVERRIDE: React to WASD
         if message == "W":
-            print("⬆️  THRUST FORWARD")
+            state["vel"] += 2.0
+            state["pitch"] = 5
         elif message == "S":
-            print("⬇️  REVERSE THRUST")
+            state["vel"] = max(0, state["vel"] - 2.0)
+            state["pitch"] = -5
         elif message == "A":
-            print("⬅️  BANK LEFT")
+            state["roll"] = -10
+            state["gforce"] = 1.4
         elif message == "D":
-            print("➡️  BANK RIGHT")
+            state["roll"] = 10
+            state["gforce"] = 1.4
         elif message == "SPACE":
-            print("🛑 EMERGENCY BRAKE ENGAGED")
-    # ----------------------------------------
+            state["vel"] = 0
+            state["pitch"] = 0
+            state["roll"] = 0
+            state["alt"] -= 5.0 # Dropping fast!
+            state["gforce"] = 0.8
+        
+        # Decay effects back to level flight
+        async def decay():
+            await asyncio.sleep(0.5)
+            state["pitch"] = 0
+            state["roll"] = 0
+            state["gforce"] = 1.0
+        asyncio.create_task(decay())
+
+    # 📡 HUD BROADCAST LOOP: 10Hz Telemetry
+    async def telemetry_loop():
+        while True:
+            if channel.readyState == "open":
+                payload = json.dumps({
+                    "type": "telemetry",
+                    "data": state
+                })
+                channel.send(payload)
+            await asyncio.sleep(0.1)
+
+    asyncio.create_task(telemetry_loop())
 
     try:
         async with websockets.connect(uri) as websocket:

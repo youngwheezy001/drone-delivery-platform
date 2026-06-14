@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from pydantic import BaseModel
 
 from app.core.config import settings
 from app.core import security
@@ -90,3 +91,20 @@ async def read_users_me(current_user: User = Depends(get_current_user)) -> Any:
     Returns the authenticated user's profile for tactical UI rendering.
     """
     return current_user
+
+class PushTokenUpdate(BaseModel):
+    token: str
+
+@router.put("/push-token")
+async def update_push_token(
+    payload: PushTokenUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Registers the Expo Push Token for the mobile client.
+    Used for live dispatch and arrival notifications.
+    """
+    current_user.expo_push_token = payload.token
+    await db.commit()
+    return {"status": "success", "detail": "Push token registered"}

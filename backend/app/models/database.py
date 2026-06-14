@@ -14,12 +14,43 @@ if DATABASE_URL.startswith("postgres://") or DATABASE_URL.startswith("postgresql
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
 
-# 4. Spin up the Cloud Engine
-engine = create_async_engine(DATABASE_URL, echo=False)
-AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+if "?" not in DATABASE_URL:
+    DATABASE_URL += "?ssl=require"
+elif "ssl=" not in DATABASE_URL:
+    DATABASE_URL += "&ssl=require"
+
+# 4. Spin up the Cloud Engine with High-Performance Pooling
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_async_engine(
+        DATABASE_URL, 
+        echo=False,
+        connect_args={"check_same_thread": False}
+    )
+else:
+    engine = create_async_engine(
+        DATABASE_URL, 
+        echo=False,
+        pool_size=20,           # Tactical capacity for concurrent mobile uplinks
+        max_overflow=10,        # Emergency overflow during surge traffic
+        pool_timeout=30,        # Standard grid timeout
+        pool_pre_ping=True,     # Proactive health check for stale connections
+        connect_args={"statement_cache_size": 0}
+    )
+
+# 5. Continuous Session Factory
+AsyncSessionLocal = sessionmaker(
+    engine, 
+    class_=AsyncSession, 
+    expire_on_commit=False,
+    autoflush=False
+)
+
 Base = declarative_base()
 
 async def get_db():
     """Yields a secure database session for each API request."""
     async with AsyncSessionLocal() as session:
-        yield session
+        try:
+            yield session
+        finally:
+            await session.close()
