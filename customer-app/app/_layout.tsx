@@ -1,10 +1,28 @@
 import React, { useEffect } from 'react';
 import { Alert } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import * as Updates from 'expo-updates';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '../context/AuthContext';
 import { CartProvider } from '../context/CartContext';
+
+function InitialRedirect({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const segments = useSegments();
+  const [hasRedirected, setHasRedirected] = React.useState(false);
+
+  useEffect(() => {
+    if (!hasRedirected) {
+      // Force the root of the app to always start at landing
+      setHasRedirected(true);
+      setTimeout(() => {
+        router.replace('/landing');
+      }, 100);
+    }
+  }, [hasRedirected, router]);
+
+  return <>{children}</>;
+}
 
 export default function RootLayout() {
   // --- OTA UPDATE LOGIC ---
@@ -53,12 +71,14 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AuthProvider>
         <CartProvider>
-          <Stack initialRouteName="landing">
-            <Stack.Screen name="landing" options={{ headerShown: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="checkout" options={{ title: 'Mission Planning', headerStyle: { backgroundColor: '#000' }, headerTintColor: '#fff' }} />
-            <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-          </Stack>
+          <InitialRedirect>
+            <Stack initialRouteName="landing">
+              <Stack.Screen name="landing" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="checkout" options={{ title: 'Mission Planning', headerStyle: { backgroundColor: '#000' }, headerTintColor: '#fff' }} />
+              <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+            </Stack>
+          </InitialRedirect>
         </CartProvider>
       </AuthProvider>
     </SafeAreaProvider>

@@ -28,8 +28,31 @@ export default function LandingScreen() {
         const node = await discoverActiveNode();
         setActiveNode(node);
         const res = await fetch(`${node}/api/v1/marketplace/discovery`);
-        if (res.ok) setHubs(await res.json());
+        if (res.ok) {
+           const data = await res.json();
+           if (data.length > 0) setHubs(data);
+           else throw new Error("Empty DB");
+        } else {
+           throw new Error("Bad Response");
+        }
       } catch (e) {
+        console.log("Injecting Mock Hubs for Presentation");
+        setHubs([
+          {
+            id: "MOCK_HUB_1",
+            name: "TUSTAR CENTRAL HUB",
+            company_id: "TUSTAR_HQ",
+            region: "NAIROBI_CENTRAL",
+            products: [ { id: "p1", name: "Tactical Pizza", price: 15.00 }, { id: "p2", name: "Water Supply", price: 5.00 } ]
+          },
+          {
+            id: "MOCK_HUB_2",
+            name: "MEGASCRIPT LOGISTICS",
+            company_id: "MEGASCRIPT_HUB",
+            region: "NAIROBI_WEST",
+            products: [ { id: "p3", name: "Drone Batteries", price: 150.00 }, { id: "p4", name: "First Aid Kit", price: 45.00 } ]
+          }
+        ]);
       } finally {
         setIsLoading(false);
       }
