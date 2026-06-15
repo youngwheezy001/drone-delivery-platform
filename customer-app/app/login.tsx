@@ -56,6 +56,8 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
+       <Text style={{color: '#00ffcc', margin: 50, textAlign: 'center'}}>LOGIN DEACTIVATED FOR PRESENTATION</Text>
+       {/* 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
@@ -128,6 +130,7 @@ export default function LoginScreen() {
           <View style={{ height: 60 }} />
         </ScrollView>
       </KeyboardAvoidingView>
+      */}
     </View>
   );
 }

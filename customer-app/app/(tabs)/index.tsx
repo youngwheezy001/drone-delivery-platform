@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image, ActivityIn
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { Config, discoverActiveNode } from '../../constants/Config';
+import { MOCK_HUBS } from '../../constants/MockData';
 import { PromoCarousel } from '../../components/PromoCarousel';
 import { Skeleton } from '../../components/Skeleton';
 import { useCart } from '../../context/CartContext';
@@ -128,27 +129,47 @@ export default function ShopHomeScreen() {
       } catch (e) {
         console.error("🛑 MISSION UPLINK FAILURE, USING MOCK DATA FOR PRESENTATION:", e);
         // INJECT MOCK DATA FOR PRESENTATION PURPOSES
-        setDiscoveryData([
-          {
-            id: 'mock_hub_1',
-            name: 'TUSTAR CENTRAL HUB',
-            region: 'NAIROBI CENTRAL',
-            products: [
-              { id: 'p1', name: 'Tactical Drone Battery', description: 'High-cap battery', price: 4500, weight_kg: 0.5, image_url: '' },
-              { id: 'p2', name: 'Hot Pizza', description: 'Pepperoni Large', price: 1200, weight_kg: 0.8, image_url: 'food' }
-            ]
-          },
-          {
-            id: 'mock_hub_2',
-            name: 'MEGASCRIPT LOGISTICS',
-            region: 'WESTLANDS SECTOR',
-            products: [
-              { id: 'p3', name: 'Medical Kit', description: 'Emergency Supplies', price: 3200, weight_kg: 1.2, image_url: 'medicine' },
-              { id: 'p4', name: 'Coke Zero', description: 'Cold Drink', price: 150, weight_kg: 0.3, image_url: 'food_alt' }
-            ]
-          }
+        let hubs = MOCK_HUBS;
+        
+        // Apply vendor filter if present
+        if (vendorParam) {
+            hubs = hubs.filter((h: any) => h.id === vendorParam);
+            if (hubs.length === 1) {
+                setSelectedVendor(hubs[0]); // Automatically open the vendor if specific vendor selected
+            }
+        }
+        
+        // Apply category filter if present
+        if (categoryParam) {
+            hubs = hubs.map((h: any) => {
+                const c = categoryParam.toLowerCase();
+                const filteredProducts = h.products.filter((p: any) => {
+                    if (c === 'anything') return true;
+                    
+                    const catName = (p.category?.name || "").toLowerCase();
+                    const prodName = (p.name || "").toLowerCase();
+                    const prodDesc = (p.description || "").toLowerCase();
+                    
+                    if (c === 'pharmacy' || c === 'health') return catName === 'medicine';
+                    if (c === 'groceries' || c === 'food') return catName === 'food';
+                    
+                    // Specific food items
+                    if (c === 'pizza') return prodName.includes('pizza');
+                    if (c === 'burger') return prodName.includes('burger');
+                    if (c === 'drinks') return prodName.includes('coke') || prodName.includes('soda') || prodDesc.includes('drink') || prodName.includes('water');
+                    
+                    return catName === c || prodName.includes(c);
+                });
+                return { ...h, products: filteredProducts };
+            }).filter((h: any) => h.products.length > 0); // Only show hubs that have products in this category
+        }
+        setDiscoveryData(hubs);
+        setCategories([
+          { id: '1', name: 'Trending', icon: 'trending-up', color: '#00ffcc' },
+          { id: '2', name: 'Food', icon: 'fast-food', color: '#f59e0b' },
+          { id: '3', name: 'Medicine', icon: 'medical', color: '#ef4444' }
         ]);
-        setWeatherState({ is_grounded: false, wind_speed_kmh: 12 });
+        setWeatherState({ is_grounded: false, wind_speed_kmh: 12, temp: 22, condition: "CLEAR" });
       } finally {
         setIsDataLoading(false);
       }
