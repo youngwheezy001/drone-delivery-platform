@@ -83,6 +83,7 @@ export default function ShopHomeScreen() {
 
         if (dRes.ok) {
            let hubs = await dRes.json();
+           if (hubs.length === 0) throw new Error("Empty DB");
            
            // Apply vendor filter if present
            if (vendorParam) {
