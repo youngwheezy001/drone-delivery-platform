@@ -24,7 +24,7 @@ async def sync_database():
                 user_id = f'user_{cid.lower()}'
                 hashed_pw = pwd_context.hash(pin)
                 await conn.execute(
-                    text('INSERT INTO users (id, email, hashed_password, full_name, company_id, role, is_active) VALUES (:id, :email, :pw, :name, :cid, :role, True)'),
+                    text("INSERT INTO users (id, email, hashed_password, full_name, company_id, role, is_active) VALUES (:id, :email, :pw, :name, :cid, :role, TRUE)"),
                     {'id': user_id, 'email': email, 'pw': hashed_pw, 'name': name, 'cid': cid, 'role': role}
                 )
                 print(f'Seeded {email}')
