@@ -43,7 +43,7 @@ export default function MissionControlPortal() {
     heatmapMode, toggleHeatmap,
     fleet, setFleet,
     logs, addLog,
-    accessToken, isAuthenticated, logout,
+    accessToken, isAuthenticated, logout, setAccessToken,
     manualDroneIds, toggleManualDrone,
     selectedDroneId, setSelectedDroneId,
     clearMissionSelection
