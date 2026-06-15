@@ -24,11 +24,11 @@ import { POSIntegrationPanel } from './components/Settings/POSIntegrationPanel';
 
 export default function App() {
   // --- CORE STATE ---
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [isStandaloneMode, setIsStandaloneMode] = useState(false);
   const [isStandaloneForced, setIsStandaloneForced] = useState(false);
-  const [tabletIdentity, setTabletIdentity] = useState(""); 
-  const [authToken, setAuthToken] = useState("");
+  const [tabletIdentity, setTabletIdentity] = useState("TUSTAR_HQ"); 
+  const [authToken, setAuthToken] = useState("MOCK_PRESENTATION_TOKEN");
   const [activeNode, setActiveNode] = useState(Config.HTTP_URL);
 
   // --- DISCOVERY STATE (FOR LOGIN) ---

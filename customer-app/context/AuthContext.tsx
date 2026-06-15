@@ -22,9 +22,9 @@ const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
-  const [token, setToken] = useState<string | null>(null);
-  const [user, setUser] = useState<any | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [token, setToken] = useState<string | null>("MOCK_PRESENTATION_TOKEN");
+  const [user, setUser] = useState<any | null>({ email: "vip@tustar.io", name: "VIP Customer", role: "CUSTOMER" });
+  const [isLoading, setIsLoading] = useState(false);
   const [activeNode, setActiveNode] = useState(Config.HTTP_URL);
 
   useEffect(() => {
@@ -100,12 +100,8 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
   };
 
   const signOut = async () => {
-    setIsLoading(true);
-    await SecureStore.deleteItemAsync('userToken');
-    await SecureStore.deleteItemAsync('userData');
-    setToken(null);
-    setUser(null);
-    setIsLoading(false);
+    // Disable signout for testing
+    return;
   };
 
   return (

@@ -108,11 +108,11 @@ export default function MissionControlPortal() {
   };
 
   useEffect(() => {
-    if (!isAuthenticated) router.push('/login');
-    else {
-      addLog("MISSION_CONTROL_BOOT: UNAV_OS v4.2.1-TACTICAL", "SUCCESS");
+    if (!isAuthenticated) {
+        setAccessToken("MOCK_PRESENTATION_TOKEN");
     }
-  }, [isAuthenticated, router, addLog]);
+    addLog("MISSION_CONTROL_BOOT: UNAV_OS v4.2.1-TACTICAL", "SUCCESS");
+  }, [isAuthenticated, router, addLog, setAccessToken]);
 
   // AI 2.5: Strategic Intelligence Fetching
   useEffect(() => {
