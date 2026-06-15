@@ -95,6 +95,7 @@ export default function App() {
         SecureStore.setItemAsync('COMPANY_ID', "TUSTAR_HQ");
         setIsAuthenticated(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }, 500);
     } catch (e) {
       Alert.alert("CONNECTION FAILURE", "Unable to establish uplink to grid node.");
     }
