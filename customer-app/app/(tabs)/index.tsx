@@ -70,12 +70,16 @@ export default function ShopHomeScreen() {
       try {
         const node = await discoverActiveNode();
         setActiveNode(node);
-        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+
         const [dRes, cRes, hRes] = await Promise.all([
-          fetch(`${node}/api/v1/marketplace/discovery`),
-          fetch(`${node}/api/v1/marketplace/categories`),
-          fetch(`${node}/api/v1/health/tactical`)
+          fetch(`${node}/api/v1/marketplace/discovery`, { signal: controller.signal }),
+          fetch(`${node}/api/v1/marketplace/categories`, { signal: controller.signal }),
+          fetch(`${node}/api/v1/health/tactical`, { signal: controller.signal })
         ]);
+        
+        clearTimeout(timeoutId);
 
         if (dRes.ok) {
            let hubs = await dRes.json();
@@ -121,7 +125,29 @@ export default function ShopHomeScreen() {
            setWeatherState(hData.weather);
         }
       } catch (e) {
-        console.error("🛑 MISSION UPLINK FAILURE:", e);
+        console.error("🛑 MISSION UPLINK FAILURE, USING MOCK DATA FOR PRESENTATION:", e);
+        // INJECT MOCK DATA FOR PRESENTATION PURPOSES
+        setDiscoveryData([
+          {
+            id: 'mock_hub_1',
+            name: 'TUSTAR CENTRAL HUB',
+            region: 'NAIROBI CENTRAL',
+            products: [
+              { id: 'p1', name: 'Tactical Drone Battery', description: 'High-cap battery', price: 4500, weight_kg: 0.5, image_url: '' },
+              { id: 'p2', name: 'Hot Pizza', description: 'Pepperoni Large', price: 1200, weight_kg: 0.8, image_url: 'food' }
+            ]
+          },
+          {
+            id: 'mock_hub_2',
+            name: 'MEGASCRIPT LOGISTICS',
+            region: 'WESTLANDS SECTOR',
+            products: [
+              { id: 'p3', name: 'Medical Kit', description: 'Emergency Supplies', price: 3200, weight_kg: 1.2, image_url: 'medicine' },
+              { id: 'p4', name: 'Coke Zero', description: 'Cold Drink', price: 150, weight_kg: 0.3, image_url: 'food_alt' }
+            ]
+          }
+        ]);
+        setWeatherState({ is_grounded: false, wind_speed_kmh: 12 });
       } finally {
         setIsDataLoading(false);
       }

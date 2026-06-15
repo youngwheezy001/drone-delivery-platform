@@ -46,34 +46,11 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
   const signIn = async (email: string, pass: string) => {
     setIsLoading(true);
     try {
-      const node = await discoverActiveNode();
-      setActiveNode(node);
-
-      const formData = new FormData();
-      formData.append('username', email);
-      formData.append('password', pass);
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-      const response = await fetch(`${node}/api/v1/auth/login/access-token`, {
-        method: 'POST',
-        body: formData,
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-
-      if (!response.ok) throw new Error("Invalid Credentials");
-      
-      const { access_token } = await response.json();
-      await SecureStore.setItemAsync('userToken', access_token);
-      setToken(access_token);
-      setUser({ email }); 
-
-      // 📲 Register for Push Notifications
-      await registerForPushNotificationsAsync(access_token, node);
-
+      setTimeout(() => {
+        setToken("MOCK_PRESENTATION_TOKEN");
+        setUser({ email, name: "Customer User", role: "CUSTOMER" });
+        SecureStore.setItemAsync('userToken', "MOCK_PRESENTATION_TOKEN");
+      }, 500);
     } finally {
       setIsLoading(false);
     }
@@ -89,49 +66,26 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
   const signInWithGoogle = async (email: string) => {
     setIsLoading(true);
     try {
-      const node = await discoverActiveNode();
-      setActiveNode(node);
-
-      const response = await fetch(`${node}/api/v1/auth/google-login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.detail || "Google account not registered");
-      }
-
-      const data = await response.json();
-      setToken(data.access_token);
-      await SecureStore.setItemAsync('userToken', data.access_token);
-
-      const userResp = await fetch(`${node}/api/v1/auth/me`, {
-        headers: { 'Authorization': `Bearer ${data.access_token}` }
-      });
-      if (userResp.ok) {
-        const userData = await userResp.json();
-        setUser(userData);
-        await SecureStore.setItemAsync('userData', JSON.stringify(userData));
-      }
+      setTimeout(() => {
+        setToken("MOCK_PRESENTATION_TOKEN");
+        setUser({ email, name: "Google Customer" });
+        SecureStore.setItemAsync('userToken', "MOCK_PRESENTATION_TOKEN");
+      }, 500);
     } catch (e: any) {
-      setIsLoading(false);
       throw e;
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const signUp = async (email: string, pass: string, name: string, role: string = "OPERATOR") => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${Config.HTTP_URL}/api/v1/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: pass, full_name: name, role })
-      });
-      if (!response.ok) throw new Error("Registration Failed");
-      // Prompt user to sign in or auto-sign in here
+      setTimeout(() => {
+        setToken("MOCK_PRESENTATION_TOKEN");
+        setUser({ email, name, role });
+        SecureStore.setItemAsync('userToken', "MOCK_PRESENTATION_TOKEN");
+      }, 500);
     } finally {
       setIsLoading(false);
     }

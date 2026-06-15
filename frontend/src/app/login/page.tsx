@@ -22,24 +22,11 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://10.0.10.0:8000'}/api/v1/auth/login/access-token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          username: email,
-          password: password,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        // 🔐 SECURE TRANSITION: Move to MFA Stage
+      // Bypassing Backend for Presentation Purposes
+      setTimeout(() => {
         setMfaStage(true);
-        // Store token temporarily or pass it to MFA complete
-        sessionStorage.setItem('__temp_token', data.access_token);
-      } else {
-        setError('UNAUTHORIZED: MISSION CONTROL CREDENTIALS REJECTED');
-      }
+        sessionStorage.setItem('__temp_token', "MOCK_PRESENTATION_TOKEN");
+      }, 500);
     } catch (err) {
       setError('COMM_LINK_FAILURE: BACKEND UNREACHABLE');
     } finally {

@@ -31,13 +31,15 @@ async def get_current_user(
         )
 
     # Allow Debug Token from App
-    if token == "DEBUG" or token.startswith("DEBUG"):
-        result = await db.execute(select(User).where(User.email == "lewis@tustar.io"))
+    if token == "DEBUG" or token.startswith("DEBUG") or token == "MOCK_PRESENTATION_TOKEN":
+        result = await db.execute(select(User).where(User.email == "admin@tustar.io"))
         user = result.scalars().first()
         if user: return user
         class MockUser:
-            id = "DEBUG_MODE_USER"
-            email = "lewis@tustar.io"
+            id = "user_tustar_hq"
+            email = "admin@tustar.io"
+            company_id = "TUSTAR_HQ"
+            role = "SELLER"
             is_admin = True
             is_active = True
         return MockUser()

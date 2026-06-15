@@ -87,30 +87,14 @@ export default function App() {
 
   const handleLogin = async (email: string, pass: string) => {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-      const res = await fetch(`${activeNode}/api/v1/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `username=${encodeURIComponent(email)}&password=${encodeURIComponent(pass)}`,
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      
-      const data = await res.json();
-      if (res.ok && data.access_token) {
-        const decoded: any = jwtDecode(data.access_token);
-        setAuthToken(data.access_token);
-        setTabletIdentity(decoded.company_id || "TUSTAR_HUB");
-        await SecureStore.setItemAsync('AUTH_TOKEN', data.access_token);
-        await SecureStore.setItemAsync('COMPANY_ID', decoded.company_id || "TUSTAR_HUB");
+      // Bypassing Backend Authentication for Presentation / Testing
+      setTimeout(() => {
+        setAuthToken("MOCK_PRESENTATION_TOKEN");
+        setTabletIdentity("TUSTAR_HQ");
+        SecureStore.setItemAsync('AUTH_TOKEN', "MOCK_PRESENTATION_TOKEN");
+        SecureStore.setItemAsync('COMPANY_ID', "TUSTAR_HQ");
         setIsAuthenticated(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } else {
-        Alert.alert("ACCESS DENIED", "Invalid operator credentials.");
-      }
     } catch (e) {
       Alert.alert("CONNECTION FAILURE", "Unable to establish uplink to grid node.");
     }
