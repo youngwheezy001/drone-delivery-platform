@@ -52,7 +52,26 @@ import { create } from 'zustand';
 import { Hub, GlobalStats, DeliveryMission, Drone, DroneTelemetry } from '../types';
 
 export const useMissionStore = create<MissionState>((set) => ({
-  hubs: [],
+  hubs: [
+    {
+      id: "mock_1",
+      company_id: "TUSTAR_HQ",
+      name: "Tustar HQ Node",
+      region: "NAIROBI_CENTRAL",
+      latitude: -1.2921,
+      longitude: 36.7884,
+      is_active: true
+    },
+    {
+      id: "mock_2",
+      company_id: "MEGASCRIPT_HUB",
+      name: "Megascript Logistics",
+      region: "NAIROBI_WEST",
+      latitude: -1.3050,
+      longitude: 36.8000,
+      is_active: true
+    }
+  ],
   activeOrders: [],
   scheduledOrders: [],
   stats: { total_missions: 0, active_hubs: 0, total_revenue: 0, success_rate: 98.5 },

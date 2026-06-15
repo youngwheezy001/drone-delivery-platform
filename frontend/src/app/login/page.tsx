@@ -16,6 +16,12 @@ export default function LoginPage() {
   const [mfaStage, setMfaStage] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
 
+  // Automatically redirect if they hit the login page
+  React.useEffect(() => {
+    setAccessToken("MOCK_PRESENTATION_TOKEN");
+    router.push('/');
+  }, [router, setAccessToken]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -80,9 +86,10 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-6 bg-grid selection:bg-teal-500">
+      <div className="text-teal-500 font-bold uppercase">LOGIN DEACTIVATED FOR PRESENTATION. Redirecting to Mission Control...</div>
+      {/* 
       <div className="w-full max-w-md animate-in fade-in zoom-in duration-700">
         <div className="glass p-10 rounded-[2.5rem] border border-white/5 relative overflow-hidden group">
-          {/* Tactical Decor */}
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-teal-500/50 to-transparent"></div>
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-teal-500/10 blur-[100px] rounded-full"></div>
           
@@ -157,6 +164,7 @@ export default function LoginPage() {
            Proprietary OS v4.2 © 2026 Tustar Defense Systems
         </p>
       </div>
+      */}
     </div>
   );
 }

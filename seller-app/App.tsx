@@ -64,11 +64,10 @@ export default function App() {
 
       const savedToken = await SecureStore.getItemAsync('AUTH_TOKEN');
       const savedCid = await SecureStore.getItemAsync('COMPANY_ID');
-      if (savedToken && savedCid) {
-         setAuthToken(savedToken);
-         setTabletIdentity(savedCid);
-         setIsAuthenticated(true);
-      }
+      // FORCE AUTH ALWAYS FOR PRESENTATION
+      setAuthToken(savedToken || "MOCK_PRESENTATION_TOKEN");
+      setTabletIdentity(savedCid || "TUSTAR_HQ");
+      setIsAuthenticated(true);
     };
     bootstrap();
   }, []);
@@ -102,9 +101,7 @@ export default function App() {
   };
 
   const handleLogout = async () => {
-    await SecureStore.deleteItemAsync('AUTH_TOKEN');
-    await SecureStore.deleteItemAsync('COMPANY_ID');
-    setIsAuthenticated(false);
+    // Logout disabled for presentation.
     setShowLogoutWarning(false);
   };
 
@@ -122,8 +119,26 @@ export default function App() {
       const res = await fetch(`${activeNode}/api/v1/deliveries/seller/active?company_id=${encodeURIComponent(tabletIdentity)}`, { 
         headers: { 'Authorization': `Bearer ${authToken}` } 
       });
-      if (res.ok) setActiveOrders(await res.json());
-    } catch (e) {}
+      if (res.ok) {
+        const data = await res.json();
+        if (data.length > 0) setActiveOrders(data);
+        else throw new Error("Empty DB");
+      } else {
+        throw new Error("Failed");
+      }
+    } catch (e) {
+      // INJECT MOCK PRESENTATION DATA
+      setActiveOrders([
+        {
+          id: "ord-test-1",
+          customer_id: "lewis@tustar.io",
+          status: "PREPARING",
+          company_id: tabletIdentity,
+          package_weight_kg: 1.5,
+          created_at: new Date().toISOString()
+        }
+      ]);
+    }
   };
 
   const handleUpdateOrder = async (id: string, newStatus: string) => {
@@ -156,9 +171,22 @@ export default function App() {
         fetch(`${activeNode}/api/v1/marketplace/my-inventory`, { headers: { 'Authorization': `Bearer ${authToken}` } }),
         fetch(`${activeNode}/api/v1/marketplace/categories`)
       ]);
-      if (pRes.ok) setProducts(await pRes.json());
+      if (pRes.ok) {
+        const data = await pRes.json();
+        if (data.length > 0) setProducts(data);
+        else throw new Error("Empty DB");
+      } else {
+        throw new Error("Failed");
+      }
       if (cRes.ok) setCategories(await cRes.json());
-    } catch (e) {}
+    } catch (e) {
+      // INJECT MOCK PRESENTATION DATA
+      setProducts([
+        { id: "p1", name: "Tactical Drone Battery", description: "High-cap battery", price: 4500, weight_kg: 0.5, category_id: "c1", company_id: tabletIdentity, is_trending: true, stock_count: 50 },
+        { id: "p2", name: "Emergency Medkit", description: "First Aid & Tourniquet", price: 3500, weight_kg: 0.4, category_id: "c2", company_id: tabletIdentity, is_trending: true, stock_count: 100 }
+      ]);
+      setCategories([{ id: "c1", name: "electronics" }, { id: "c2", name: "medicine" }]);
+    }
     setIsInventoryLoading(false);
   };
 
@@ -180,24 +208,8 @@ export default function App() {
   };
 
   if (!isAuthenticated) {
-    return (
-      <SafeAreaProvider>
-        <LoginScreen 
-          isHubsLoading={isHubsLoading}
-          hubs={hubs}
-          hasDiscoveryTimedOut={hasDiscoveryTimedOut}
-          manualIP={manualIP}
-          onManualIPChange={setManualIP}
-          onManualConnect={() => discoverHubs(`http://${manualIP}:8000`)}
-          onLaunchDemo={() => { setIsDemoMode(true); setIsAuthenticated(true); }} 
-          onLogin={handleLogin}
-          onRefreshPolling={() => discoverHubs(activeNode)}
-          isStandaloneMode={isStandaloneMode}
-          isStandaloneForced={isStandaloneForced}
-          onToggleStandalone={setIsStandaloneForced}
-        />
-      </SafeAreaProvider>
-    );
+    // LOGIN DEACTIVATED FOR PRESENTATION. Auto-forcing true.
+    return null;
   }
 
   return (
