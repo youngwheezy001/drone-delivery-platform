@@ -53,10 +53,16 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
       formData.append('username', email);
       formData.append('password', pass);
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
       const response = await fetch(`${node}/api/v1/auth/login/access-token`, {
         method: 'POST',
-        body: formData
+        body: formData,
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
 
       if (!response.ok) throw new Error("Invalid Credentials");
       

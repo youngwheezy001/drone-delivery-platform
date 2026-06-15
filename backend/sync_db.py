@@ -3,6 +3,8 @@ import os
 from app.models.database import engine, Base
 from passlib.context import CryptContext
 from sqlalchemy import text
+from app.models.user import User
+from app.models.order import Order
 
 async def sync_database():
     print('Initiating Database Synchronization Sequence...')

@@ -87,11 +87,17 @@ export default function App() {
 
   const handleLogin = async (email: string, pass: string) => {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
       const res = await fetch(`${activeNode}/api/v1/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `username=${encodeURIComponent(email)}&password=${encodeURIComponent(pass)}`
+        body: `username=${encodeURIComponent(email)}&password=${encodeURIComponent(pass)}`,
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
       
       const data = await res.json();
       if (res.ok && data.access_token) {
